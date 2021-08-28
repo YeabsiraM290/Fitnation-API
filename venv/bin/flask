@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' "/home/yeabsira/A.A.U/Third_Second_Semester/Advanced mobile programing/Assignements/Project/fitnation_api/venv/bin/python3" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from flask.cli import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())
