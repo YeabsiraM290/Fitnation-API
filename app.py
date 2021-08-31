@@ -91,7 +91,61 @@ class User(Resource):
             else:
                 return "username taken", 401
 
-        return "short username", 401    
+        return "short username", 401
+    def put(self):
+
+        update_diet_header = request.headers
+        # user_id = update_diet_header['id']
+        user_id = 1
+
+        user = Users.query.filter(
+            Users.user_id == int(user_id)).first()
+
+        if user:
+
+            updated_user_info = request.get_json()
+
+            username = updated_user_info['username']
+            print(username)
+            age = updated_user_info['age']
+            height = updated_user_info['height']
+            weight = updated_user_info['weight']
+
+            if checkLen(username, 4):
+
+                if isUsernameUnique(username):
+
+                    if isBetween(age, 15, 75):
+
+                        if isBetween(height, 1.45, 2.5):
+
+                            if isBetween(weight, 25, 200):
+
+                                user.username = username
+                                user.age = age
+                                user.height = height
+                                user.weight = weight
+
+                                db.session.add(user)
+                                db.session.commit()
+
+                                return "Success", 200
+
+                            else:
+                                return "invalid weight", 401
+
+                        else:
+                            return "invalid height", 401
+
+                    else:
+                        return "invalid age", 401
+
+                else:
+                    return "username taken", 401
+            else:
+                return "short username", 401
+
+        return 'User not found', 404        
  api.add_resource(User, '/api/User/')
 
 if __name__ == "__main__":
