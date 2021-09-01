@@ -162,8 +162,42 @@ class User(Resource):
 
             return "Success", 200
 
-        return "user doesnot exist", 401            
- api.add_resource(User, '/api/User/')
+        return "user doesnot exist", 401
+class UpdatePassword(Resource):
+
+    def put(self):
+
+        update_password_header = request.headers
+        user_id = update_password_header['id']
+
+        user = Users.query.filter(
+            Users.user_id == int(user_id)).first()
+
+        if user:
+
+            update_password_body = json.loads(request.form['content'])
+
+            password = update_password_body['password']
+
+            isValid = checkLen(password, 8)
+
+            if isValid:
+
+                update_user_credentials = Login.query.filter(
+                    Login.email == user.email).first()
+
+                update_user_credentials.password = password
+
+                db.session.add(update_user_credentials)
+                db.session.commit()
+
+                return "Success", 200
+
+            return "short password", 401
+
+        return 'User not found', 404
+api.add_resource(UpdatePassword, '/api/Password/')                            
+api.add_resource(User, '/api/User/')
 
 if __name__ == "__main__":
     app.run(debug=True) 
