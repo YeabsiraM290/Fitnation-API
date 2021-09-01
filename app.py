@@ -145,7 +145,24 @@ class User(Resource):
             else:
                 return "short username", 401
 
-        return 'User not found', 404        
+        return 'User not found', 404
+    def delete(self):
+
+        update_diet_header = request.headers
+        # user_id = update_diet_header['id']
+        user_id =1
+
+        user = Users.query.filter(
+            Users.user_id == int(user_id)).first()
+
+        if user:
+
+            db.session.delete(user)
+            db.session.commit()
+
+            return "Success", 200
+
+        return "user doesnot exist", 401            
  api.add_resource(User, '/api/User/')
 
 if __name__ == "__main__":
