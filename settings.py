@@ -1,3 +1,4 @@
 FLASK_DEBUG = True
 SQLALCHEMY_DATABASE_URI = 'sqlite:///./DB/app.db' 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+SECERET_KEY = "myseceret"

@@ -2,7 +2,6 @@ from enum import *
 from operator import le
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import datetime
 import json
 
 from sqlalchemy.orm import *
@@ -21,30 +20,29 @@ class Users(db.Model):
     email = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
     sex = db.Column(db.String, nullable=False)
-    age = db.Column(db.Integer, nullable=True)
-    height = db.Column(db.Float, nullable=True)
-    weight = db.Column(db.Float, nullable=True)
-    question = db.Column(db.String, nullable=False)
-    answer = db.Column(db.String, nullable=False)
+    age = db.Column(db.Integer, nullable=False)
+    height = db.Column(db.Float, nullable=False)
+    weight = db.Column(db.Float, nullable=False)
     Timeline = relationship(
         "Timeline", uselist=False, backref="users")
     UserPlan = relationship(
         "UserPlan", uselist=False, backref="users")
 
-    def __init__(self, username, email, password, sex, question, answer):
+    def __init__(self, username, email, password, sex, age, height, weight):
 
         self.username = username
         self.email = email
         self.password = password
         self.sex = sex
-        self.question = question
-        self.answer = answer
+        self.age = age
+        self.height = height
+        self.weight = weight
 
     def serialize(self):
         return{
 
             "username": self.username,
-            "email": self.email,
+            "emailAddress": self.email,
             "age": self.age,
             "sex": self.sex,
             "height": self.height,
@@ -55,25 +53,21 @@ class Users(db.Model):
 class Admin(db.Model):
 
     admin_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String,  nullable=False)
     email = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
 
-    def __init__(self, username, email, password):
+    def __init__(self, email, password):
 
-        self.username = username
         self.email = email
         self.password = password
 
     def serialize(self):
         return{
-
-            "username": self.username,
             "email": self.email
         }
 
 
-class Login(db.Model):
+class LoginInfo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String, nullable=False)
@@ -91,22 +85,28 @@ class Login(db.Model):
 
             "role": self.role
         }
+
+
 class Exerciseplan(db.Model):
 
     plan_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String, nullable=False)
     pic = db.Column(db.String, nullable=False)
-    schedule = db.Column(db.String, nullable=False)
+    beginner = db.Column(db.String, nullable=False)
+    intermidate = db.Column(db.String, nullable=False)
+    advanced = db.Column(db.String, nullable=False)
     Timeline = relationship(
         "Timeline", uselist=False, backref="exercisePlan")
     UserPlan = relationship(
         "UserPlan", uselist=False, backref="exerciseplan")
 
-    def __init__(self, name, pic, schedule):
+    def __init__(self, name, pic, beginner, intermidate, advanced):
 
         self.name = name
         self.pic = pic
-        self.schedule = schedule
+        self.beginner = beginner
+        self.intermidate = intermidate
+        self.advanced = advanced
 
     def serialize(self):
 
@@ -114,7 +114,9 @@ class Exerciseplan(db.Model):
 
             "name": self.name,
             "pic": self.pic,
-            "schedule": json.loads(self.schedule)
+            "beginner": json.loads(self.beginner),
+            "intermidate": json.loads(self.intermidate),
+            "advanced": json.loads(self.advanced)
 
         }
 
@@ -123,19 +125,37 @@ class Diet(db.Model):
 
     diet_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String, nullable=False)
-    schedule = db.Column(db.String, nullable=False)
+    monday = db.Column(db.String, nullable=False)
+    tuesday = db.Column(db.String, nullable=False)
+    wednesday = db.Column(db.String, nullable=False)
+    thursday = db.Column(db.String, nullable=False)
+    friday = db.Column(db.String, nullable=False)
+    saturday = db.Column(db.String, nullable=False)
+    sunday = db.Column(db.String, nullable=False)
 
-    def __init__(self, name, schedule):
+    def __init__(self, name, monday, tuesday, wednesday, thursday, friday, saturday, sunday):
 
         self.name = name
-        self.schedule = schedule
+        self.monday = monday
+        self.tuesday = tuesday
+        self.wednesday = wednesday
+        self.thursday = thursday
+        self.friday = friday
+        self.saturday = saturday
+        self.sunday = sunday
 
     def serialize(self):
 
         return{
 
             "name": self.name,
-            "schedule": json.loads(self.schedule)
+            "monday": json.loads(self.monday),
+            "tuesday": json.loads(self.tuesday),
+            "wednesday": json.loads(self.wednesday),
+            "thursday": json.loads(self.thursday),
+            "friday": json.loads(self.friday),
+            "saturday": json.loads(self.saturday),
+            "sunday": json.loads(self.sunday)
 
         }
 
@@ -144,32 +164,27 @@ class Timeline(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     date = db.Column(db.String, nullable=False)
-    day = db.Column(db.String, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey(
         'users.user_id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey(
         'exerciseplan.plan_id'), nullable=False)
-    exercise = db.Column(db.String, nullable=False)
+    workouts = db.Column(db.String, nullable=False)
     status = db.Column(db.String, nullable=False)
-    level = db.Column(db.String, nullable=False)
 
-    def __init__(self, date, day, user_id, plan_id, exercise, status, level):
+    def __init__(self, date, user_id, plan_id, workouts, status):
 
         self.date = date
-        self.day = day
         self.user_id = user_id
         self.plan_id = plan_id
-        self.exercise = exercise
+        self.workouts = workouts
         self.status = status
-        self.level = level
 
     def serialize(self):
 
         return{
 
             "date": self.date,
-            "day": self.day,
-            "exercise": json.loads(self.exercise),
+            "workouts": json.loads(self.exercise),
             "status": self.status
 
         }
@@ -205,4 +220,3 @@ def create():
 
     db.drop_all()
     db.create_all()
- 
