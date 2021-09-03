@@ -1,8 +1,29 @@
+from operator import ne
+from os import name
+from typing import ClassVar
+import datetime as dt
+
+from flask.json import JSONEncoder
+from decorators import *
+import bcrypt
 from flask import Flask, jsonify, request, session
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from settings import *
+from helpers import *
 from model import *
+import jwt
+
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = SECERET_KEY
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
+
+api = Api(app)
+db.init_app(app)
+CORS(app)
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecretkey'
@@ -165,39 +186,51 @@ class User(Resource):
         return "user doesnot exist", 401
 class UpdatePassword(Resource):
 
-    def put(self):
+    method_decorators = [token_required]
 
-        update_password_header = request.headers
-        user_id = update_password_header['id']
+    def put(self, current_user):
 
-        user = Users.query.filter(
-            Users.user_id == int(user_id)).first()
+        try:
 
-        if user:
+            user_id = current_user.user_id
 
-            update_password_body = json.loads(request.form['content'])
+            user = Users.query.filter(
+                Users.user_id == user_id).first()
 
-            password = update_password_body['password']
+            if user:
 
-            isValid = checkLen(password, 8)
+                update_password_body = request.authorization
 
-            if isValid:
+                password = update_password_body.password
+                password_form_request = password.encode(
+                    "utf-8")
+                password = bcrypt.hashpw(
+                    password_form_request, bcrypt.gensalt())
 
-                update_user_credentials = Login.query.filter(
-                    Login.email == user.email).first()
+                isValid = checkLen(password, 8)
 
-                update_user_credentials.password = password
+                if isValid:
 
-                db.session.add(update_user_credentials)
-                db.session.commit()
+                    update_user_credentials = LoginInfo.query.filter(
+                        LoginInfo.email == user.email).first()
 
-                return "Success", 200
+                    update_user_credentials.password = password
 
-            return "short password", 401
+                    db.session.add(update_user_credentials)
+                    db.session.commit()
 
-        return 'User not found', 404
-api.add_resource(UpdatePassword, '/api/Password/')                            
-api.add_resource(User, '/api/User/')
+                    return "Success", 200
+
+                return "short password", 401
+
+            return 'User not found', 404
+
+        except Exception as e:
+
+            return e, 401
+
+api.add_resource(UpdatePassword, '/api/updatePassword/')
+api.add_resource(User, '/api/user/')
 
 if __name__ == "__main__":
     app.run(debug=True) 
