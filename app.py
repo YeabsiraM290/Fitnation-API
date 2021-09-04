@@ -229,6 +229,127 @@ class UpdatePassword(Resource):
 
             return e, 401
 
+class RevokeUser(Resource):
+    method_decorators = [admin_required]
+
+    def put(self):
+
+        try:
+            reovoked_user_header = request.authorization
+            user_email = reovoked_user_header.username
+
+            user = Users.query.filter(
+                Users.email == user_email).first()
+
+            if user:
+
+                deleted_user_credentials = LoginInfo.query.filter(
+                    LoginInfo.email == user_email).first()
+
+                db.session.delete(deleted_user_credentials)
+                db.session.commit()
+
+                return "Success", 200
+
+            return 'User not found', 404
+
+        except:
+            return 'Server error', 401
+
+
+class AllowUser(Resource):
+    method_decorators = [admin_required]
+
+    def put(self):
+
+        try:
+            allowed_user_header = request.authorization
+            user_email = allowed_user_header.username
+
+            user = Users.query.filter(
+                Users.email == user_email).first()
+
+            if user:
+
+                email = user.email
+                password = user.password
+                allowed_user_credentials = LoginInfo(email, password, "user")
+
+                db.session.add(allowed_user_credentials)
+                db.session.commit()
+
+                return "Success", 200
+
+            return 'User not found', 404
+
+        except:
+            return 'Server error', 402
+
+
+class AddAdmin(Resource):
+    method_decorators = [admin_required]
+
+    def post(self):
+
+        try:
+            new_admin_header = request.authorization
+            email = new_admin_header.username
+            password = new_admin_header.password
+            password_form_request = password.encode(
+                "utf-8")
+            password = bcrypt.hashpw(
+                password_form_request, bcrypt.gensalt())
+
+            admin = Admin.query.filter(
+                Admin.email == email).first()
+
+            if admin:
+
+                return 'Admin already exists', 401
+
+            new_admin_credential = LoginInfo(email, password, "admin")
+
+            db.session.add(new_admin_credential)
+            db.session.commit()
+
+            new_admin = Admin(email, password)
+
+            db.session.add(new_admin)
+            db.session.commit()
+
+            return "Success", 200
+
+        except:
+            return 'Server error', 402
+
+
+class GeneralReport(Resource):
+
+    method_decorators = [admin_required]
+
+    def get(self):
+
+        try:
+            data = {}
+
+            users = Users.query.all()
+            users_count = len(users)
+
+            exercises = Exerciseplan.query.all()
+            exercises_count = len(exercises)
+
+            data['user_count'] = users_count
+            data['exercise_count'] = exercises_count
+
+            return data, 200
+
+        except:
+            return 'Server error', 401
+
+api.add_resource(RevokeUser, '/api/revokeUser/')
+api.add_resource(AllowUser, '/api/allowUser/')
+api.add_resource(AddAdmin, '/api/newAdmin/')
+api.add_resource(GeneralReport, '/api/report')
 api.add_resource(UpdatePassword, '/api/updatePassword/')
 api.add_resource(User, '/api/user/')
 
