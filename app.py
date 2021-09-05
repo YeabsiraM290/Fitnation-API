@@ -346,6 +346,183 @@ class GeneralReport(Resource):
         except:
             return 'Server error', 401
 
+class Login(Resource):
+
+    def get(self):
+
+        try:
+
+            login_info = request.authorization
+            email = login_info.username
+            password = login_info.password
+
+            user = LoginInfo.query.filter(LoginInfo.email == email).first()
+            data = {}
+            if user:
+
+                if bcrypt.checkpw(password.encode("utf-8"), user.password):
+                    print('xxxxxxxxxxxxxx')
+
+                    token = jwt.encode({'email': user.email, 'exp': dt.datetime.utcnow(
+                    ) + dt.timedelta(days=30)}, SECERET_KEY)
+                    data["token"] = token
+                    data["role"] = user.role
+
+                    return data, 200
+
+                return "Email or password not correct.", 401
+            else:
+                return "user not found or blocked", 404
+        except Exception as e:
+
+            return e, 401
+
+
+class Signup(Resource):
+
+    def post(self):
+
+        try:
+
+            new_user_info = request.get_json()
+            userCredientals_info = request.authorization
+
+            username = new_user_info['username']
+            email = userCredientals_info.username
+            password = userCredientals_info.password
+            sex = new_user_info['sex']
+            age = new_user_info['age']
+            height = new_user_info['height']
+            weight = new_user_info['weight']
+
+            if checkLen(username, 4):
+
+                if isUsernameUnique(username):
+
+                    if valEmail(email):
+
+                        if isEmailUnique(email):
+
+                            if checkLen(password, 8):
+
+                                if isBetween(age, 15, 75):
+
+                                    if isBetween(height, 1.45, 2.5):
+
+                                        if isBetween(weight, 25, 200):
+
+                                            password_form_request = password.encode(
+                                                "utf-8")
+                                            password = bcrypt.hashpw(
+                                                password_form_request, bcrypt.gensalt())
+
+                                            new_user = Users(
+                                                username, email, password, sex, age, height, weight)
+
+                                            db.session.add(new_user)
+                                            db.session.commit()
+
+                                            new_user_credentials = LoginInfo(
+                                                email, password, 'user')
+
+                                            db.session.add(
+                                                new_user_credentials)
+                                            db.session.commit()
+
+                                            token = jwt.encode({'email': email, 'exp': dt.datetime.utcnow(
+                                            ) + dt.timedelta(days=30)}, SECERET_KEY)
+
+                                            data = {}
+                                            data["token"] = token
+                                            print("YYYYYY")
+                                            data["role"] = "user"
+
+                                            return data, 200
+
+                                        else:
+                                            return "invalid weight", 401
+
+                                    else:
+                                        return "invalid height", 401
+
+                                else:
+                                    return "invalid age", 401
+
+                            else:
+                                return "short password", 401
+
+                        else:
+                            return "email taken", 401
+
+                    else:
+                        return "invalid email", 401
+
+                else:
+                    return "username taken", 401
+
+            return "short username", 401
+
+        except Exception as e:
+
+            return e, 401
+
+
+class CheckUserAuthenticity(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user = LoginInfo.query.filter(
+                LoginInfo.email == current_user.email).first()
+            role = user.role
+
+            return {'role': role.lower()}, 200
+        except:
+            return 'Server error', 401
+class ResetPassword(Resource):
+
+    def put(self):
+
+        try:
+
+            update_password_header = request.authorization
+            email = update_password_header.username
+
+            user = Users.query.filter(
+                Users.email == email).first()
+
+            if user:
+
+                password = update_password_header.password
+
+                isValid = checkLen(password, 8)
+
+                if isValid:
+
+                    update_user_credentials = LoginInfo.query.filter(
+                        LoginInfo.email == user.email).first()
+
+                    update_user_credentials.password = password
+
+                    db.session.add(update_user_credentials)
+                    db.session.commit()
+
+                    return "Success", 200
+
+                return "short password", 401
+
+            return 'User not found', 404
+
+        except:
+
+            return 'Server error', 401
+
+api.add_resource(CheckUserAuthenticity, '/api/isUser/')
+api.add_resource(Login, '/api/login/')
+api.add_resource(Signup, '/api/signup/')
+api.add_resource(ResetPassword, '/api/forgetPassword/')
 api.add_resource(RevokeUser, '/api/revokeUser/')
 api.add_resource(AllowUser, '/api/allowUser/')
 api.add_resource(AddAdmin, '/api/newAdmin/')
