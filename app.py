@@ -518,6 +518,59 @@ class ResetPassword(Resource):
         except:
 
             return 'Server error', 401
+class UserStatus(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        user_id = current_user.user_id
+
+        user = Users.query.filter(Users.user_id == user_id).first()
+
+        user_status = {}
+
+        if user:
+
+            height = user.height
+            weight = user.weight
+            age = user.age
+
+            bmi = calBMI(height, weight)
+            fat = calFat(age, bmi)
+            cal = calCalorieIntake(age)
+
+            user_status['bmi'] = bmi
+            user_status['fat'] = fat
+            user_status['calorie'] = cal
+            user_status['weight'] = weight
+
+            userPlan = UserPlan.query.filter(
+                UserPlan.user_id == user_id).first()
+
+            if userPlan:
+
+                plan_id = getPlanId(user_id)
+                planName = getPlanName(plan_id)
+                level = getLevel(user_id)
+                goal = getPlanGoal(user_id)
+
+                updateWeek(user_id)
+                week = getWeek(user_id)
+
+                user_status['planName'] = planName
+                user_status['level'] = level
+                user_status['week'] = week
+                user_status['goal'] = goal
+
+            user_status['planName'] = "_____"
+            user_status['level'] = "_____"
+            user_status['week'] = "_____"
+            user_status['goal'] = "_____"
+
+            return user_status, 200
+
+        return 'User not found', 404
 
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
