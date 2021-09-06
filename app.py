@@ -572,6 +572,25 @@ class UserStatus(Resource):
 
         return 'User not found', 404
 
+class DietPlan(Resource):
+
+    method_decorators = [admin_required]
+
+    def get(self):
+
+        try:
+            diet_db = Diet.query.all()
+
+            diets = []
+            for diet in diet_db:
+
+                diets.append(diet.serialize())
+
+            return diets,  200
+
+        except:
+            return 'Server error', 401
+
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
 api.add_resource(Signup, '/api/signup/')
