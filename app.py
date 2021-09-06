@@ -590,6 +590,37 @@ class DietPlan(Resource):
 
         except:
             return 'Server error', 401
+def post(self):
+
+        try:
+            new_diet_body = request.get_json()
+
+            checkDiet = Diet.query.filter(
+                Diet.name == new_diet_body['name']).first()
+
+            if checkDiet:
+
+                return 'Diet already exist', 401
+
+            diet_name = new_diet_body['name']
+            monday = json.dumps(new_diet_body['monday'])
+            tuesday = json.dumps(new_diet_body['tuesday'])
+            wednesday = json.dumps(new_diet_body['wednesday'])
+            thursday = json.dumps(new_diet_body['thursday'])
+            friday = json.dumps(new_diet_body['friday'])
+            saturday = json.dumps(new_diet_body['saturday'])
+            sunday = json.dumps(new_diet_body['sunday'])
+
+            new_diet = Diet(diet_name, monday, tuesday, wednesday,
+                            thursday, friday, saturday, sunday)
+
+            db.session.add(new_diet)
+            db.session.commit()
+
+            return 'success', 200
+
+        except:
+            return "Server error", 401
 
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
