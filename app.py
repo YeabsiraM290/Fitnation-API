@@ -622,6 +622,34 @@ def post(self):
         except:
             return "Server error", 401
 
+def put(self):
+
+        try:
+            update_diet_body = request.get_json()
+
+            checkDiet = Diet.query.filter(
+                Diet.name == update_diet_body['name']).first()
+
+            if checkDiet:
+
+                checkDiet.name = update_diet_body['name']
+                checkDiet.monday = json.dumps(update_diet_body['monday'])
+                checkDiet.tuesday = json.dumps(update_diet_body['tuesday'])
+                checkDiet.wednesday = json.dumps(update_diet_body['wednesday'])
+                checkDiet.thursday = json.dumps(update_diet_body['thursday'])
+                checkDiet.friday = json.dumps(update_diet_body['friday'])
+                checkDiet.saturday = json.dumps(update_diet_body['saturday'])
+                checkDiet.sunday = json.dumps(update_diet_body['sunday'])
+
+                db.session.add(checkDiet)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No diet found', 404
+
+        except:
+            return 'Server error', 401
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
 api.add_resource(Signup, '/api/signup/')
