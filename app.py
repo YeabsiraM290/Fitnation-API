@@ -745,6 +745,23 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error', 401
+            
+   class GetExercisePlan(Resource):
+
+    def get(self):
+
+        try:
+            plans_db = Exerciseplan.query.all()
+
+            plans = []
+            for plan in plans_db:
+
+                plans.append(plan.serialize())
+
+            return plans,  200
+
+        except:
+            return 'Server error', 401
 
 api.add_resource(UserStatus, '/api/userStatus/')
 api.add_resource(DietPlan, '/api/diet/')            
