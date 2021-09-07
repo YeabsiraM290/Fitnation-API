@@ -670,6 +670,35 @@ def delete(self):
 
         except:
             return 'Server error', 401
+           
+class UserExercisePlan(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+            userPlanInfo = UserPlan.query.filter(
+                UserPlan.user_id == user_id).first()
+
+            if userPlanInfo:
+
+                level = getLevel(user_id)
+                plan_id = userPlanInfo.plan_id
+
+                updateLevel(user_id, plan_id, level)
+                updateWeek(user_id)
+                level = getLevel(user_id)
+                schedule = getWorkouts(plan_id, level)
+
+                return schedule, 200
+
+            return 'no plan found', 404
+
+        except:
+
+            return 'Server error', 401
 
 api.add_resource(UserStatus, '/api/userStatus/')
 api.add_resource(DietPlan, '/api/diet/')            
