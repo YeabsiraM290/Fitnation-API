@@ -650,6 +650,29 @@ def put(self):
 
         except:
             return 'Server error', 401
+
+def delete(self):
+
+        try:
+            deleted_diet_name = request.get_json()['name']
+
+            checkDiet = Diet.query.filter(
+                Diet.name == deleted_diet_name).first()
+
+            if checkDiet:
+
+                db.session.delete(checkDiet)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No diet found', 404
+
+        except:
+            return 'Server error', 401
+
+api.add_resource(UserStatus, '/api/userStatus/')
+api.add_resource(DietPlan, '/api/diet/')            
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
 api.add_resource(Signup, '/api/signup/')
