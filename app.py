@@ -724,6 +724,27 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error'
+    def delete(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+
+            userPlan = UserPlan.query.filter(
+                UserPlan.user_id == user_id).first()
+
+            if userPlan:
+
+                db.session.delete(userPlan)
+                db.session.commit()
+
+                resetTimeline(user_id)
+
+                return "success", 200
+
+            return "Plan doesnot exist", 401
+        except:
+
+            return 'Server error', 401
 
 api.add_resource(UserStatus, '/api/userStatus/')
 api.add_resource(DietPlan, '/api/diet/')            
