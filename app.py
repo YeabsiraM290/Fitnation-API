@@ -699,6 +699,41 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error', 401
+    class TodaysTimeline(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+            currentDay = dt.now().day
+            currentMonth = dt.now().month
+            currentYear = dt.now().year
+
+            current_date = currentDay + '/' + currentMonth + '/' + currentYear
+
+            todays_timeline = Timeline.query.filter(
+                Timeline.user_id == user_id, Timeline.date == current_date).first()
+
+            if todays_timeline:
+
+                if todays_timeline.status == 'done':
+                    return 'Already done', 401
+
+                return todays_timeline.serialize(), 200
+
+            plan_id = getPlanId(user_id)
+            level = getLevel(user_id)
+
+            today_workouts = getTodaysWorkouts(plan_id, level)
+            todays_timeline = Timeline(
+                current_date, user_id, plan_id, today_workouts, 'not')
+
+            return todays_timeline, 200
+
+        except:
+            return 'Server error', 401
             
      
    def post(self, current_user):
