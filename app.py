@@ -762,6 +762,39 @@ class UserExercisePlan(Resource):
 
         except:
             return 'Server error', 401
+            
+   class ExercisePlan(Resource):
+
+    method_decorators = [admin_required]
+
+    def post(self):
+
+        try:
+            new_plan = request.get_json()
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == new_plan['name']).first()
+
+            if checkPlan:
+
+                return 'Exercise already exist', 401
+
+            plan_name = new_plan['name']
+            plan_pic = new_plan['pic']
+            beginner = json.dumps(new_plan['beginner'])
+            intermidate = json.dumps(new_plan['intermidate'])
+            advanced = json.dumps(new_plan['advanced'])
+
+            new_plan = Exerciseplan(
+                plan_name, plan_pic, beginner, intermidate, advanced)
+
+            db.session.add(new_plan)
+            db.session.commit()
+
+            return 'success', 200
+
+        except:
+            return 'Server error', 401
 
 api.add_resource(UserStatus, '/api/userStatus/')
 api.add_resource(DietPlan, '/api/diet/')            
