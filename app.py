@@ -795,6 +795,56 @@ class UserExercisePlan(Resource):
 
         except:
             return 'Server error', 401
+   def put(self):
+
+        try:
+            update_plan_body = request.get_json()
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == update_plan_body['name']).first()
+
+            if checkPlan:
+
+                checkPlan.name = update_plan_body['name']
+                checkPlan.pic = update_plan_body['pic']
+                checkPlan.beginner = json.dumps(update_plan_body['beginner'])
+                checkPlan.intermidate = json.dumps(
+                    update_plan_body['intermidate'])
+                checkPlan.advanced = json.dumps(update_plan_body['advanced'])
+
+                db.session.add(checkPlan)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No exercise found', 404
+
+        except:
+            return 'Server error', 401
+
+    def delete(self):
+
+        try:
+            deleted_plan_name = request.get_json()['name']
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == deleted_plan_name).first()
+
+            if checkPlan:
+
+                db.session.delete(checkPlan)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No exercise found', 404
+
+        except:
+            return 'Server error', 401
+
+api.add_resource(UserExercisePlan, '/api/userExercisePlan/')
+api.add_resource(ExercisePlan, '/api/exercisePlan/')
+api.add_resource(GetExercisePlan, '/api/allExercisePlans/')
 
 api.add_resource(UserStatus, '/api/userStatus/')
 api.add_resource(DietPlan, '/api/diet/')            
