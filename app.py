@@ -858,15 +858,15 @@ class ExercisePlan(Resource):
 
     def post(self):
 
-        try:
-            new_plan = request.get_json()
+        # try:
+        #     new_plan = request.get_json()
 
-            checkPlan = Exerciseplan.query.filter(
-                Exerciseplan.name == new_plan['name']).first()
+        #     checkPlan = Exerciseplan.query.filter(
+        #         Exerciseplan.name == new_plan['name']).first()
 
-            if checkPlan:
+        #     if checkPlan:
 
-                return 'Exercise already exist', 401
+        #         return 'Exercise already exist', 401
 
             plan_name = new_plan['name']
             plan_pic = new_plan['pic']
