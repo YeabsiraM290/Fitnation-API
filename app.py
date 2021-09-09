@@ -699,7 +699,7 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error', 401
-    class TodaysTimeline(Resource):
+class TodaysTimeline(Resource):
 
     method_decorators = [token_required]
 
@@ -736,7 +736,7 @@ class UserExercisePlan(Resource):
             return 'Server error', 401
             
      
-   def post(self, current_user):
+def post(self, current_user):
 
         try:
             user_id = current_user.user_id
@@ -759,7 +759,7 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error'
-    def delete(self, current_user):
+def delete(self, current_user):
 
         try:
             user_id = current_user.user_id
@@ -780,8 +780,62 @@ class UserExercisePlan(Resource):
         except:
 
             return 'Server error', 401
+class UserTimeline(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            timeline_db = Timeline.query.filter(
+                Timeline.user_id == current_user.user_id).all()
+
+            timelines = []
+            for timeline in timeline_db:
+
+                timelines.append(timeline.serialize())
+
+            return timelines,  200
+
+        except:
+            return 'Server error', 401
+
+    def put(self, current_user):
+
+        try:
+            update_timeline_body = request.get_json()
+            user_id = current_user.user_id
+            date = update_timeline_body['date']
+
+            checkTimeline = Timeline.query.filter(
+                Timeline.user_id == user_id, Timeline.date == date).first()
+
+            if checkTimeline:
+
+                checkTimeline.status = 'done'
+                checkTimeline.exercises = json.dumps(
+                    update_timeline_body['workouts'])
+
+                db.session.add(checkTimeline)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No timeline found', 404
+
+        except:
+            return 'Server error', 401
+    def delete(self, current_user):
+
+        try:
+            resetTimeline(current_user.id)
+            return 'success', 200
+
+        except:
+            return 'Server error', 401
+    
             
-   class GetExercisePlan(Resource):
+class GetExercisePlan(Resource):
 
     def get(self):
 
@@ -798,7 +852,7 @@ class UserExercisePlan(Resource):
         except:
             return 'Server error', 401
             
-   class ExercisePlan(Resource):
+class ExercisePlan(Resource):
 
     method_decorators = [admin_required]
 
@@ -830,7 +884,7 @@ class UserExercisePlan(Resource):
 
         except:
             return 'Server error', 401
-   def put(self):
+def put(self):
 
         try:
             update_plan_body = request.get_json()
@@ -857,7 +911,7 @@ class UserExercisePlan(Resource):
         except:
             return 'Server error', 401
 
-    def delete(self):
+def delete(self):
 
         try:
             deleted_plan_name = request.get_json()['name']
@@ -876,6 +930,10 @@ class UserExercisePlan(Resource):
 
         except:
             return 'Server error', 401
+
+            
+api.add_resource(TodaysTimeline, '/api/todayTimeline')
+api.add_resource(UserTimeline, '/api/userTimeline')
 
 api.add_resource(UserExercisePlan, '/api/userExercisePlan/')
 api.add_resource(ExercisePlan, '/api/exercisePlan/')
