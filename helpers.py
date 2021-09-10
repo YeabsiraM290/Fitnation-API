@@ -194,19 +194,18 @@ def getWorkouts(plan_id, level):
         PlanInfo = Exerciseplan.query.filter(
             Exerciseplan.plan_id == plan_id).first()
 
-        levels = ['beginner', 'intermidate', 'advanced']
-        level = levels.index(level)
-
         if PlanInfo:
 
             plan_info = PlanInfo.serialize()
-            workouts = plan_info[levels[level]]
+            workouts = plan_info[level]
+            workouts['level'] = level
 
             return workouts
 
     except:
 
         return False
+
 
 def getTodaysWorkouts(plan_id, level):
 
@@ -294,6 +293,7 @@ def getPlanId(user_id):
 
     except:
         return False
+
 
 def getWeek(user_id):
 

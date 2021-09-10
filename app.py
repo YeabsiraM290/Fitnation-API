@@ -24,210 +24,8 @@ api = Api(app)
 db.init_app(app)
 CORS(app)
 
+# Admin
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecretkey'
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
-
-api = Api(app)
-db.init_app(app)
-CORS(app)
-class User(Resource):
-
-    def get(self):
-
-        # update_diet_header = request.headers
-        user_id = 1 
-
-        userInfo = Users.query.filter(
-            Users.user_id == user_id).first()
-
-        if userInfo:
-
-            return userInfo.serialize(), 200
-
-        return 'no user found', 404
-    def post(self):
-
-        new_user_info = json.loads(request.form['content'])
-
-        username = new_user_info['username']
-        email = new_user_info['email']
-        password = new_user_info['password']
-        sex = new_user_info['sex']
-        age = new_user_info['age']
-        question = new_user_info['question']
-        answer = new_user_info['answer']
-        height = new_user_info['height']
-        weight = new_user_info['weight']
-
-        if checkLen(username, 4):
-
-            if isUsernameUnique(username):
-
-                if valEmail(email):
-
-                    if isEmailUnique(email):
-
-                        if checkLen(password, 8):
-
-                            if isBetween(age, 15, 75):
-
-                                if isBetween(height, 1.45, 2.5):
-
-                                    if isBetween(weight, 25, 200):
-
-                                        new_user = Users(
-                                            username, email, password, sex, age, height, weight, question, answer)
-                                        new_user_credentials = Login(
-                                            email, password, "user")
-
-                                        db.session.add(new_user)
-                                        db.session.commit()
-
-                                        db.session.add(new_user_credentials)
-                                        db.session.commit()
-
-                                        return "Success", 200
-
-                                    else:
-                                        return "invalid weight", 401
-
-                                else:
-                                    return "invalid height", 401
-
-                            else:
-                                return "invalid age", 401
-
-                        else:
-                            return "short password", 401
-
-                    else:
-                        return "email taken", 401
-
-                else:
-                    return "invalid email", 401
-
-            else:
-                return "username taken", 401
-
-        return "short username", 401
-    def put(self):
-
-        update_diet_header = request.headers
-        # user_id = update_diet_header['id']
-        user_id = 1
-
-        user = Users.query.filter(
-            Users.user_id == int(user_id)).first()
-
-        if user:
-
-            updated_user_info = request.get_json()
-
-            username = updated_user_info['username']
-            print(username)
-            age = updated_user_info['age']
-            height = updated_user_info['height']
-            weight = updated_user_info['weight']
-
-            if checkLen(username, 4):
-
-                if isUsernameUnique(username):
-
-                    if isBetween(age, 15, 75):
-
-                        if isBetween(height, 1.45, 2.5):
-
-                            if isBetween(weight, 25, 200):
-
-                                user.username = username
-                                user.age = age
-                                user.height = height
-                                user.weight = weight
-
-                                db.session.add(user)
-                                db.session.commit()
-
-                                return "Success", 200
-
-                            else:
-                                return "invalid weight", 401
-
-                        else:
-                            return "invalid height", 401
-
-                    else:
-                        return "invalid age", 401
-
-                else:
-                    return "username taken", 401
-            else:
-                return "short username", 401
-
-        return 'User not found', 404
-    def delete(self):
-
-        update_diet_header = request.headers
-        # user_id = update_diet_header['id']
-        user_id =1
-
-        user = Users.query.filter(
-            Users.user_id == int(user_id)).first()
-
-        if user:
-
-            db.session.delete(user)
-            db.session.commit()
-
-            return "Success", 200
-
-        return "user doesnot exist", 401
-class UpdatePassword(Resource):
-
-    method_decorators = [token_required]
-
-    def put(self, current_user):
-
-        try:
-
-            user_id = current_user.user_id
-
-            user = Users.query.filter(
-                Users.user_id == user_id).first()
-
-            if user:
-
-                update_password_body = request.authorization
-
-                password = update_password_body.password
-                password_form_request = password.encode(
-                    "utf-8")
-                password = bcrypt.hashpw(
-                    password_form_request, bcrypt.gensalt())
-
-                isValid = checkLen(password, 8)
-
-                if isValid:
-
-                    update_user_credentials = LoginInfo.query.filter(
-                        LoginInfo.email == user.email).first()
-
-                    update_user_credentials.password = password
-
-                    db.session.add(update_user_credentials)
-                    db.session.commit()
-
-                    return "Success", 200
-
-                return "short password", 401
-
-            return 'User not found', 404
-
-        except Exception as e:
-
-            return e, 401
 
 class RevokeUser(Resource):
     method_decorators = [admin_required]
@@ -295,10 +93,6 @@ class AddAdmin(Resource):
             new_admin_header = request.authorization
             email = new_admin_header.username
             password = new_admin_header.password
-            password_form_request = password.encode(
-                "utf-8")
-            password = bcrypt.hashpw(
-                password_form_request, bcrypt.gensalt())
 
             admin = Admin.query.filter(
                 Admin.email == email).first()
@@ -346,6 +140,8 @@ class GeneralReport(Resource):
         except:
             return 'Server error', 401
 
+
+# User
 class Login(Resource):
 
     def get(self):
@@ -360,8 +156,7 @@ class Login(Resource):
             data = {}
             if user:
 
-                if bcrypt.checkpw(password.encode("utf-8"), user.password):
-                    print('xxxxxxxxxxxxxx')
+                if password == user.password:
 
                     token = jwt.encode({'email': user.email, 'exp': dt.datetime.utcnow(
                     ) + dt.timedelta(days=30)}, SECERET_KEY)
@@ -405,16 +200,11 @@ class Signup(Resource):
 
                             if checkLen(password, 8):
 
-                                if isBetween(age, 15, 75):
+                                if isBetween(age, 10, 75):
 
                                     if isBetween(height, 1.45, 2.5):
 
                                         if isBetween(weight, 25, 200):
-
-                                            password_form_request = password.encode(
-                                                "utf-8")
-                                            password = bcrypt.hashpw(
-                                                password_form_request, bcrypt.gensalt())
 
                                             new_user = Users(
                                                 username, email, password, sex, age, height, weight)
@@ -434,8 +224,6 @@ class Signup(Resource):
 
                                             data = {}
                                             data["token"] = token
-                                            print("YYYYYY")
-                                            data["role"] = "user"
 
                                             return data, 200
 
@@ -452,19 +240,19 @@ class Signup(Resource):
                                 return "short password", 401
 
                         else:
-                            return "email taken", 401
+                            return "email taken", 402
 
                     else:
                         return "invalid email", 401
 
                 else:
-                    return "username taken", 401
+                    return "username taken", 400
 
             return "short username", 401
 
         except Exception as e:
 
-            return e, 401
+            return 'Server error', 401
 
 
 class CheckUserAuthenticity(Resource):
@@ -481,6 +269,51 @@ class CheckUserAuthenticity(Resource):
             return {'role': role.lower()}, 200
         except:
             return 'Server error', 401
+
+
+class UpdatePassword(Resource):
+
+    method_decorators = [token_required]
+
+    def put(self, current_user):
+
+        try:
+
+            user_id = current_user.user_id
+            print(current_user.username)
+
+            user = Users.query.filter(
+                Users.user_id == int(user_id)).first()
+
+            if user:
+
+                update_password_body = request.authorization
+
+                password = update_password_body.password
+
+                isValid = checkLen(password, 8)
+
+                if isValid:
+
+                    update_user_credentials = LoginInfo.query.filter(
+                        LoginInfo.email == user.email).first()
+
+                    update_user_credentials.password = password
+
+                    db.session.add(update_user_credentials)
+                    db.session.commit()
+
+                    return "Success", 200
+
+                return "short password", 401
+
+            return 'User not found', 404
+
+        except Exception as e:
+
+            return e, 401
+
+
 class ResetPassword(Resource):
 
     def put(self):
@@ -504,12 +337,16 @@ class ResetPassword(Resource):
                     update_user_credentials = LoginInfo.query.filter(
                         LoginInfo.email == user.email).first()
 
-                    update_user_credentials.password = password
+                    if update_user_credentials:
 
-                    db.session.add(update_user_credentials)
-                    db.session.commit()
+                        update_user_credentials.password = password
 
-                    return "Success", 200
+                        db.session.add(update_user_credentials)
+                        db.session.commit()
+
+                        return "Success", 200
+
+                    return 'User blocked', 404
 
                 return "short password", 401
 
@@ -518,6 +355,215 @@ class ResetPassword(Resource):
         except:
 
             return 'Server error', 401
+
+
+class UserExercisePlan(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+            userPlanInfo = UserPlan.query.filter(
+                UserPlan.user_id == user_id).first()
+
+            if userPlanInfo:
+
+                level = getLevel(user_id)
+                plan_id = userPlanInfo.plan_id
+
+                updateLevel(user_id, plan_id, level)
+                updateWeek(user_id)
+                level = getLevel(user_id)
+                schedule = getWorkouts(plan_id, level)
+
+                return schedule, 200
+
+            return 'no plan found', 404
+
+        except:
+
+            return 'Server error', 401
+
+    def post(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+            plan_name = request.get_json()['name']
+
+            plan = Exerciseplan.query.filter(
+                Exerciseplan.name == plan_name).first()
+
+            if plan:
+
+                new_plan = UserPlan(user_id, plan.plan_id, 'beginner', 1)
+
+                db.session.add(new_plan)
+                db.session.commit()
+
+                return "success", 200
+
+            return "plan doesn't exist", 404
+
+        except:
+
+            return 'Server error'
+
+    def delete(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+
+            userPlan = UserPlan.query.filter(
+                UserPlan.user_id == user_id).first()
+
+            if userPlan:
+
+                db.session.delete(userPlan)
+                db.session.commit()
+
+                resetTimeline(user_id)
+
+                return "success", 200
+
+            return "Plan doesnot exist", 401
+        except:
+
+            return 'Server error', 401
+
+
+class User(Resource):
+
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+
+            userInfo = Users.query.filter(
+                Users.user_id == int(user_id)).first()
+
+            if userInfo:
+
+                return userInfo.serialize(), 200
+
+            return 'no user found', 404
+
+        except:
+            return 'Server error', 401
+
+    def put(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+
+            user = Users.query.filter(
+                Users.user_id == int(user_id)).first()
+
+            if user:
+
+                updated_user_info = request.get_json()
+
+                username = updated_user_info['username']
+                age = updated_user_info['age']
+                height = updated_user_info['height']
+                weight = updated_user_info['weight']
+                print(username)
+                if checkLen(username, 4):
+
+                    if isUsernameUnique(username):
+
+                        if isBetween(age, 10, 80):
+
+                            if isBetween(height, 1.45, 2.5):
+
+                                if isBetween(weight, 25, 200):
+
+                                    user.username = username
+                                    user.age = age
+                                    user.height = height
+                                    user.weight = weight
+
+                                    db.session.add(user)
+                                    db.session.commit()
+
+                                    return "Success", 200
+
+                                else:
+                                    return "invalid weight", 401
+
+                            else:
+                                return "invalid height", 401
+
+                        else:
+                            return "invalid age", 401
+
+                    else:
+                        return "username taken", 401
+                else:
+                    return "short username", 401
+
+            return 'User not found', 404
+
+        except Exception as e:
+
+            return e, 401
+
+    def delete(self, current_user):
+
+        try:
+
+            user_id = current_user.user_id
+
+            user = Users.query.filter(
+                Users.user_id == int(user_id)).first()
+
+            if user:
+
+                resetTimeline(user_id)
+                delPlan(user_id)
+
+                db.session.delete(user)
+                db.session.commit()
+
+                return "Success", 200
+
+            return "user doesn't exist", 404
+
+        except Exception as e:
+
+            return 'Server error', 401
+
+
+class UserDietPlan(Resource):
+    method_decorators = [token_required]
+
+    def get(self, current_user):
+
+        try:
+            user_id = current_user.user_id
+
+            userPlanInfo = UserPlan.query.filter(
+                UserPlan.user_id == int(user_id)).first()
+
+            if userPlanInfo:
+
+                plan_name = getPlanName(userPlanInfo.plan_id)
+
+                dietInfo = Diet.query.filter(Diet.name == plan_name).first()
+
+                diet_info = dietInfo.serialize()
+
+                return diet_info, 200
+
+            return 'Plan not selected', 404
+
+        except:
+            return 'Server error', 401
+
+
 class UserStatus(Resource):
 
     method_decorators = [token_required]
@@ -572,6 +618,110 @@ class UserStatus(Resource):
 
         return 'User not found', 404
 
+
+# Exercise
+
+
+class GetExercisePlan(Resource):
+
+    def get(self):
+
+        try:
+            plans_db = Exerciseplan.query.all()
+
+            plans = []
+            for plan in plans_db:
+
+                plans.append(plan.serialize())
+
+            return plans,  200
+
+        except:
+            return 'Server error', 401
+
+
+class ExercisePlan(Resource):
+
+    method_decorators = [admin_required]
+
+    def post(self):
+
+        try:
+            new_plan = request.get_json()
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == new_plan['name']).first()
+
+            if checkPlan:
+
+                return 'Exercise already exist', 401
+
+            plan_name = new_plan['name']
+            plan_pic = new_plan['pic']
+            beginner = json.dumps(new_plan['beginner'])
+            intermidate = json.dumps(new_plan['intermidate'])
+            advanced = json.dumps(new_plan['advanced'])
+
+            new_plan = Exerciseplan(
+                plan_name, plan_pic, beginner, intermidate, advanced)
+
+            db.session.add(new_plan)
+            db.session.commit()
+
+            return 'success', 200
+
+        except:
+            return 'Server error', 401
+
+    def put(self):
+
+        try:
+            update_plan_body = request.get_json()
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == update_plan_body['name']).first()
+
+            if checkPlan:
+
+                checkPlan.name = update_plan_body['name']
+                checkPlan.pic = update_plan_body['pic']
+                checkPlan.beginner = json.dumps(update_plan_body['beginner'])
+                checkPlan.intermidate = json.dumps(
+                    update_plan_body['intermidate'])
+                checkPlan.advanced = json.dumps(update_plan_body['advanced'])
+
+                db.session.add(checkPlan)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No exercise found', 404
+
+        except:
+            return 'Server error', 401
+
+    def delete(self):
+
+        try:
+            deleted_plan_name = request.headers['name']
+
+            checkPlan = Exerciseplan.query.filter(
+                Exerciseplan.name == deleted_plan_name).first()
+
+            if checkPlan:
+
+                db.session.delete(checkPlan)
+                db.session.commit()
+
+                return 'success', 200
+
+            return 'No exercise found', 404
+
+        except:
+            return 'Server error', 401
+
+
+# Diet
 class DietPlan(Resource):
 
     method_decorators = [admin_required]
@@ -590,7 +740,8 @@ class DietPlan(Resource):
 
         except:
             return 'Server error', 401
-def post(self):
+
+    def post(self):
 
         try:
             new_diet_body = request.get_json()
@@ -622,7 +773,7 @@ def post(self):
         except:
             return "Server error", 401
 
-def put(self):
+    def put(self):
 
         try:
             update_diet_body = request.get_json()
@@ -651,10 +802,10 @@ def put(self):
         except:
             return 'Server error', 401
 
-def delete(self):
+    def delete(self):
 
         try:
-            deleted_diet_name = request.get_json()['name']
+            deleted_diet_name = request.headers['name']
 
             checkDiet = Diet.query.filter(
                 Diet.name == deleted_diet_name).first()
@@ -670,35 +821,10 @@ def delete(self):
 
         except:
             return 'Server error', 401
-           
-class UserExercisePlan(Resource):
 
-    method_decorators = [token_required]
+# Timeline
 
-    def get(self, current_user):
 
-        try:
-            user_id = current_user.user_id
-            userPlanInfo = UserPlan.query.filter(
-                UserPlan.user_id == user_id).first()
-
-            if userPlanInfo:
-
-                level = getLevel(user_id)
-                plan_id = userPlanInfo.plan_id
-
-                updateLevel(user_id, plan_id, level)
-                updateWeek(user_id)
-                level = getLevel(user_id)
-                schedule = getWorkouts(plan_id, level)
-
-                return schedule, 200
-
-            return 'no plan found', 404
-
-        except:
-
-            return 'Server error', 401
 class TodaysTimeline(Resource):
 
     method_decorators = [token_required]
@@ -734,52 +860,8 @@ class TodaysTimeline(Resource):
 
         except:
             return 'Server error', 401
-            
-     
-def post(self, current_user):
 
-        try:
-            user_id = current_user.user_id
-            plan_name = request.get_json()['name']
 
-            plan = Exerciseplan.query.filter(
-                Exerciseplan.name == plan_name).first()
-
-            if plan:
-
-                new_plan = UserPlan(user_id, plan.plan_id, 'beginner', 1)
-
-                db.session.add(new_plan)
-                db.session.commit()
-
-                return "success", 200
-
-            return "plan doesn't exist", 404
-
-        except:
-
-            return 'Server error'
-def delete(self, current_user):
-
-        try:
-            user_id = current_user.user_id
-
-            userPlan = UserPlan.query.filter(
-                UserPlan.user_id == user_id).first()
-
-            if userPlan:
-
-                db.session.delete(userPlan)
-                db.session.commit()
-
-                resetTimeline(user_id)
-
-                return "success", 200
-
-            return "Plan doesnot exist", 401
-        except:
-
-            return 'Server error', 401
 class UserTimeline(Resource):
 
     method_decorators = [token_required]
@@ -825,6 +907,7 @@ class UserTimeline(Resource):
 
         except:
             return 'Server error', 401
+
     def delete(self, current_user):
 
         try:
@@ -833,124 +916,37 @@ class UserTimeline(Resource):
 
         except:
             return 'Server error', 401
-    
-            
-class GetExercisePlan(Resource):
 
-    def get(self):
 
-        try:
-            plans_db = Exerciseplan.query.all()
-
-            plans = []
-            for plan in plans_db:
-
-                plans.append(plan.serialize())
-
-            return plans,  200
-
-        except:
-            return 'Server error', 401
-            
-class ExercisePlan(Resource):
-
-    method_decorators = [admin_required]
-
-    def post(self):
-
-        try:
-            new_plan = request.get_json()
-
-            checkPlan = Exerciseplan.query.filter(
-                Exerciseplan.name == new_plan['name']).first()
-
-            if checkPlan:
-
-                return 'Exercise already exist', 401
-
-            plan_name = new_plan['name']
-            plan_pic = new_plan['pic']
-            beginner = json.dumps(new_plan['beginner'])
-            intermidate = json.dumps(new_plan['intermidate'])
-            advanced = json.dumps(new_plan['advanced'])
-
-            new_plan = Exerciseplan(
-                plan_name, plan_pic, beginner, intermidate, advanced)
-
-            db.session.add(new_plan)
-            db.session.commit()
-
-            return 'success', 200
-
-        except:
-            return 'Server error', 401
-def put(self):
-
-        try:
-            update_plan_body = request.get_json()
-
-            checkPlan = Exerciseplan.query.filter(
-                Exerciseplan.name == update_plan_body['name']).first()
-
-            if checkPlan:
-
-                checkPlan.name = update_plan_body['name']
-                checkPlan.pic = update_plan_body['pic']
-                checkPlan.beginner = json.dumps(update_plan_body['beginner'])
-                checkPlan.intermidate = json.dumps(
-                    update_plan_body['intermidate'])
-                checkPlan.advanced = json.dumps(update_plan_body['advanced'])
-
-                db.session.add(checkPlan)
-                db.session.commit()
-
-                return 'success', 200
-
-            return 'No exercise found', 404
-
-        except:
-            return 'Server error', 401
-
-def delete(self):
-
-        try:
-            deleted_plan_name = request.get_json()['name']
-
-            checkPlan = Exerciseplan.query.filter(
-                Exerciseplan.name == deleted_plan_name).first()
-
-            if checkPlan:
-
-                db.session.delete(checkPlan)
-                db.session.commit()
-
-                return 'success', 200
-
-            return 'No exercise found', 404
-
-        except:
-            return 'Server error', 401
-
-            
-api.add_resource(TodaysTimeline, '/api/todayTimeline')
-api.add_resource(UserTimeline, '/api/userTimeline')
-
-api.add_resource(UserExercisePlan, '/api/userExercisePlan/')
-api.add_resource(ExercisePlan, '/api/exercisePlan/')
-api.add_resource(GetExercisePlan, '/api/allExercisePlans/')
-
-api.add_resource(UserStatus, '/api/userStatus/')
-api.add_resource(DietPlan, '/api/diet/')            
+# Endpoints
+# User
 api.add_resource(CheckUserAuthenticity, '/api/isUser/')
 api.add_resource(Login, '/api/login/')
 api.add_resource(Signup, '/api/signup/')
 api.add_resource(ResetPassword, '/api/forgetPassword/')
+api.add_resource(UpdatePassword, '/api/updatePassword/')
+api.add_resource(User, '/api/user/')
+api.add_resource(UserStatus, '/api/userStatus/')
+api.add_resource(UserExercisePlan, '/api/userExercisePlan/')
+api.add_resource(UserDietPlan, '/api/userDietPlan/')
+
+# Admin
 api.add_resource(RevokeUser, '/api/revokeUser/')
 api.add_resource(AllowUser, '/api/allowUser/')
 api.add_resource(AddAdmin, '/api/newAdmin/')
 api.add_resource(GeneralReport, '/api/report')
-api.add_resource(UpdatePassword, '/api/updatePassword/')
-api.add_resource(User, '/api/user/')
+
+# Exercise
+api.add_resource(ExercisePlan, '/api/exercisePlan/')
+api.add_resource(GetExercisePlan, '/api/allExercisePlans/')
+
+# Diet
+api.add_resource(DietPlan, '/api/diet/')
+
+# Timeline
+api.add_resource(TodaysTimeline, '/api/todayTimeline')
+api.add_resource(UserTimeline, '/api/userTimeline')
+
 
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=True, port=5000)
